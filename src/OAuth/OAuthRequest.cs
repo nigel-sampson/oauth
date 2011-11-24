@@ -219,7 +219,7 @@ namespace OAuth
 
             var signatureBase = OAuthTools.ConcatenateRequestElements(Method.ToUpperInvariant(), RequestUrl, parameters);
 
-            var signature = OAuthTools.GetSignature(SignatureMethod, SignatureTreatment, signatureBase, ConsumerSecret);
+            var signature = OAuthTools.GetSignature(SignatureMethod, SignatureTreatment, signatureBase, ConsumerSecret, TokenSecret);
 
             return signature;
         }
@@ -234,7 +234,7 @@ namespace OAuth
 
             var signatureBase = OAuthTools.ConcatenateRequestElements(Method.ToUpperInvariant(), RequestUrl, parameters);
 
-            var signature = OAuthTools.GetSignature(SignatureMethod, SignatureTreatment, signatureBase, ConsumerSecret);
+            var signature = OAuthTools.GetSignature(SignatureMethod, SignatureTreatment, signatureBase, ConsumerSecret, TokenSecret);
 
             return signature;
         }
