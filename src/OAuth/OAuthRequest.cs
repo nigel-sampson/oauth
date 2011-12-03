@@ -125,7 +125,21 @@ namespace OAuth
 
         #region Authorization Query
 
-        public string GetAuthorizationQuery()
+		public string GetAuthorizationQuery(NameValueCollection parameters)
+        {
+            var collection = new WebParameterCollection(parameters);
+
+			return GetAuthorizationQuery(collection);
+        }
+
+		public string GetAuthorizationQuery(IDictionary<string, string> parameters)
+        {
+            var collection = new WebParameterCollection(parameters);
+
+			return GetAuthorizationQuery(collection);
+        }
+
+		public string GetAuthorizationQuery()
         {
             var collection = new WebParameterCollection(0);
 
@@ -205,7 +219,7 @@ namespace OAuth
 
             var signatureBase = OAuthTools.ConcatenateRequestElements(Method.ToUpperInvariant(), RequestUrl, parameters);
 
-            var signature = OAuthTools.GetSignature(SignatureMethod, SignatureTreatment, signatureBase, ConsumerSecret);
+            var signature = OAuthTools.GetSignature(SignatureMethod, SignatureTreatment, signatureBase, ConsumerSecret, TokenSecret);
 
             return signature;
         }
@@ -220,7 +234,7 @@ namespace OAuth
 
             var signatureBase = OAuthTools.ConcatenateRequestElements(Method.ToUpperInvariant(), RequestUrl, parameters);
 
-            var signature = OAuthTools.GetSignature(SignatureMethod, SignatureTreatment, signatureBase, ConsumerSecret);
+            var signature = OAuthTools.GetSignature(SignatureMethod, SignatureTreatment, signatureBase, ConsumerSecret, TokenSecret);
 
             return signature;
         }
