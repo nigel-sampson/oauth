@@ -321,7 +321,7 @@ namespace OAuth
         {
             var credentials = new OAuthRequest
             {
-                Method = "GET",
+                Method = method ?? "GET",
                 Type = OAuthRequestType.ProtectedResource,
                 SignatureMethod = OAuthSignatureMethod.HmacSha1,
                 SignatureTreatment = OAuthSignatureTreatment.Escaped,
