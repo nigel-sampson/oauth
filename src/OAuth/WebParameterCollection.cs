@@ -46,6 +46,7 @@ namespace OAuth
             _parameters = new List<WebParameter>(parameters);
         }
 
+#if !NETFX_CORE
         public WebParameterCollection(NameValueCollection collection) : this()
         {
             AddCollection(collection);
@@ -64,6 +65,7 @@ namespace OAuth
                 _parameters.Add(parameter);
             }
         }
+#endif
 
         public WebParameterCollection(IDictionary<string, string> collection) : this()
         {

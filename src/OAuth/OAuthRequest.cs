@@ -32,14 +32,18 @@ namespace OAuth
         /// <seealso cref="http://oauth.net/core/1.0#request_urls"/>
         public virtual string RequestUrl { get; set; }
 
+        public virtual TimeSpan TimestampOffset { get; set; }
+
         #region Authorization Header
 
+#if !NETFX_CORE
         public string GetAuthorizationHeader(NameValueCollection parameters)
         {
             var collection = new WebParameterCollection(parameters);
 
             return GetAuthorizationHeader(collection);
         }
+#endif
 
         public string GetAuthorizationHeader(IDictionary<string, string> parameters)
         {
@@ -107,13 +111,16 @@ namespace OAuth
 
             var count = 0;
 
-            foreach (var parameter in parameters.Where(parameter =>
+            var headerParameters = parameters.Where(parameter =>
                                                        !IsNullOrBlank(parameter.Name) &&
                                                        !IsNullOrBlank(parameter.Value) &&
-                                                       (parameter.Name.StartsWith("oauth_") || parameter.Name.StartsWith("x_auth_" ))))
+                                                       (parameter.Name.StartsWith("oauth_") || parameter.Name.StartsWith("x_auth_" )))
+                                                       .ToList();
+
+            foreach (var parameter in headerParameters)
             {
                 count++;
-                var format = count < parameters.Count ? "{0}=\"{1}\"," : "{0}=\"{1}\"";
+                var format = count < headerParameters.Count ? "{0}=\"{1}\"," : "{0}=\"{1}\"";
                 sb.AppendFormat(format, parameter.Name, parameter.Value);
             }
 
@@ -125,12 +132,14 @@ namespace OAuth
 
         #region Authorization Query
 
+#if !NETFX_CORE
 		public string GetAuthorizationQuery(NameValueCollection parameters)
         {
             var collection = new WebParameterCollection(parameters);
 
 			return GetAuthorizationQuery(collection);
         }
+#endif
 
 		public string GetAuthorizationQuery(IDictionary<string, string> parameters)
         {
@@ -211,7 +220,7 @@ namespace OAuth
 
         private string GetNewSignature(WebParameterCollection parameters)
         {
-            var timestamp = OAuthTools.GetTimestamp();
+            var timestamp = OAuthTools.GetTimestamp(TimestampOffset);
 
             var nonce = OAuthTools.GetNonce();
 
@@ -226,7 +235,7 @@ namespace OAuth
 
         private string GetNewSignatureXAuth(WebParameterCollection parameters)
         {
-            var timestamp = OAuthTools.GetTimestamp();
+            var timestamp = OAuthTools.GetTimestamp(TimestampOffset);
 
             var nonce = OAuthTools.GetNonce();
 

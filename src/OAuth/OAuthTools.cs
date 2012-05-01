@@ -1,8 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if !NETFX_CORE
 using System.Security.Cryptography;
+#endif
 using System.Text;
+#if NETFX_CORE
+using Windows.Security.Cryptography;
+using Windows.Security.Cryptography.Core;
+#endif
 
 namespace OAuth
 {
@@ -21,13 +27,14 @@ namespace OAuth
         private static readonly Random _random;
         private static readonly object _randomLock = new object();
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         private static readonly RandomNumberGenerator _rng = RandomNumberGenerator.Create();
 #endif
 
+
         static OAuthTools()
         {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             var bytes = new byte[4];
             _rng.GetNonZeroBytes(bytes);
             _random = new Random(BitConverter.ToInt32(bytes, 0));
@@ -67,9 +74,9 @@ namespace OAuth
         /// </summary>
         /// <seealso href="http://oauth.net/core/1.0#nonce"/>
         /// <returns></returns>
-        public static string GetTimestamp()
+        public static string GetTimestamp(TimeSpan serverOffset)
         {
-            return GetTimestamp(DateTime.UtcNow);
+            return GetTimestamp(DateTime.UtcNow, serverOffset);
         }
 
         /// <summary>
@@ -78,8 +85,10 @@ namespace OAuth
         /// <seealso href="http://oauth.net/core/1.0#nonce"/>
         /// <param name="dateTime">A specified point in time.</param>
         /// <returns></returns>
-        public static string GetTimestamp(DateTime dateTime)
+        public static string GetTimestamp(DateTime dateTime, TimeSpan serverOffset)
         {
+            var adjustedTime = dateTime.AddTicks(serverOffset.Ticks * -1);
+
             var timestamp = ToUnixTime(dateTime);
             return timestamp.ToString();
         }
@@ -140,8 +149,9 @@ namespace OAuth
         {
             // [JD]: We need to escape the apostrophe as well or the signature will fail
             var original = value;
-            var ret = original.Where(
-                c => !Unreserved.Contains(c) && c != '%').Aggregate(
+
+            var ret = original.ToCharArray().Where(
+                c => !Unreserved.Contains(c.ToString()) && c != '%').Aggregate(
                     value, (current, c) => current.Replace(
                           c.ToString(), PercentEncode(c.ToString())
                           ));
@@ -210,7 +220,13 @@ namespace OAuth
 
         private static bool EqualsIgnoreCase(string left, string right)
         {
+#if !NETFX_CORE
             return String.Compare(left, right, StringComparison.InvariantCultureIgnoreCase) == 0;
+#endif
+
+#if NETFX_CORE
+            return String.Compare(left, right, StringComparison.OrdinalIgnoreCase) == 0;
+#endif
         }
 
         /// <summary>
@@ -348,11 +364,23 @@ namespace OAuth
             {
                 case OAuthSignatureMethod.HmacSha1:
                     {
+                        var key = String.Concat(consumerSecret, "&", tokenSecret);
+
+#if NETFX_CORE
+                        var crypto = MacAlgorithmProvider.OpenAlgorithm(MacAlgorithmNames.HmacSha1);
+                        
+
+                        var cryptoKey = crypto.CreateKey(CryptographicBuffer.ConvertStringToBinary(key, BinaryStringEncoding.Utf8));
+
+                        signature = HashWith(signatureBase, cryptoKey);
+#endif
+
+#if !NETFX_CORE
                         var crypto = new HMACSHA1();
-                        var key = string.Concat(consumerSecret, "&", tokenSecret);
 
                         crypto.Key = _encoding.GetBytes(key);
                         signature = HashWith(signatureBase, crypto);
+#endif
 
                         break;
                     }
@@ -367,12 +395,24 @@ namespace OAuth
             return result;
         }
 
+#if NETFX_CORE
+        private static string HashWith(string input, CryptographicKey key)
+        {
+            var data = CryptographicBuffer.ConvertStringToBinary(input, BinaryStringEncoding.Utf8);
+            var hash = CryptographicEngine.Sign(key, data);
+
+            return CryptographicBuffer.EncodeToBase64String(hash);
+        }
+#endif
+
+#if !NETFX_CORE
         private static string HashWith(string input, HashAlgorithm algorithm)
         {
             var data = Encoding.UTF8.GetBytes(input);
             var hash = algorithm.ComputeHash(data);
             return Convert.ToBase64String(hash);
         }
+#endif
 
         private static bool IsNullOrBlank(string value)
         {

@@ -6,7 +6,7 @@ namespace OAuth
 #if !Smartphone
     [DebuggerDisplay("{Name}:{Value}")]
 #endif
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
     [Serializable]
 #endif
     public class WebParameter
