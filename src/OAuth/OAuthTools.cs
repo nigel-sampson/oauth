@@ -89,7 +89,7 @@ namespace OAuth
         {
             var adjustedTime = dateTime.AddTicks(serverOffset.Ticks * -1);
 
-            var timestamp = ToUnixTime(dateTime);
+            var timestamp = ToUnixTime(adjustedTime);
             return timestamp.ToString();
         }
 
